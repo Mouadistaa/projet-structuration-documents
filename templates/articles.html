@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="glass-container text-center">
+    <h1>Consultation des Articles</h1>
+    <p class="subtitle">Explorez l'actualité et filtrez les articles selon vos préférences.</p>
+    
+    <div class="controls-panel">
+        <form id="filter-form" class="filter-form" method="GET" action="{{ url_for('articles') }}">
+            <div class="form-group">
+                <label for="source_id">Source</label>
+                <select name="source_id" id="source_id">
+                    <option value="">Toutes les sources</option>
+                    {% for source in sources %}
+                    <option value="{{ source.source_id }}" {% if args.get('source_id') == source.source_id %}selected{% endif %}>{{ source.source_id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="jours">Période (jours)</label>
+                <input type="number" id="jours" name="jours" value="{{ args.get('jours', '30') }}" min="0" max="365">
+            </div>
+            
+            <div class="form-group">
+                <label for="mot_cle">Mot-clé (Optionnel)</label>
+                <input type="text" id="mot_cle" name="mot_cle" value="{{ args.get('mot_cle', '') }}" placeholder="Ex: politique">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+        </form>
+    </div>
+
+    <!-- Section des articles populaires -->
+    {% if populaires %}
+    <div class="popular-articles-panel" style="margin-top: 2rem; text-align: left; background: var(--surface); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow);">
+        <h2 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--text);">🔥 Articles les plus consultés</h2>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+            {% for pop in populaires %}
+            <li style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-block; background: var(--danger); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">{{ pop.nombre_consultations }} vues</span>
+                <a href="{{ url_for('goto', url=pop.url_originale) }}" target="_blank" style="color: var(--accent); text-decoration: none; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%;">
+                    {{ pop.titre }}
+                </a>
+                <span style="color: var(--muted); font-size: 0.8rem; white-space: nowrap;">- {{ pop.source_id }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="articles-list-container" style="margin-top: 2rem; text-align: left;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--text);">Résultats de la recherche ({{ articles|length }} articles)</h2>
+        {% if articles %}
+            <div class="articles-grid" style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for article in articles %}
+                <div class="article-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: var(--shadow);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span class="badge" style="background: var(--accent-lt); color: var(--accent); padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">{{ article.source_id }}</span>
+                        <span style="color: var(--muted); font-size: 0.85rem;">
+                            {% if article.date_publication %}
+                            {{ article.date_publication.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                            Date inconnue
+                            {% endif %}
+                        </span>
+                    </div>
+                    <h3 style="margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 1.15rem; line-height: 1.4;">
+                        <a href="{{ url_for('goto', url=article.url_originale) }}" target="_blank" style="color: var(--text); text-decoration: none; transition: color 0.2s;">
+                            {{ article.titre }}
+                        </a>
+                    </h3>
+                    {% if article.mots_cles %}
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem;">
+                        {% for mot in article.mots_cles[:5] %}
+                        <span style="background: var(--bg); color: var(--muted); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; border: 1px solid var(--border);">#{{ mot }}</span>
+                        {% endfor %}
+                        {% if article.mots_cles|length > 5 %}
+                        <span style="color: var(--muted); font-size: 0.75rem; padding: 2px 4px;">+{{ article.mots_cles|length - 5 }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination Controls -->
+            {% if total_pages > 1 %}
+            <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2.5rem;">
+                {% if page > 1 %}
+                <a href="{{ url_for('articles', source_id=args.get('source_id', ''), jours=args.get('jours', '30'), mot_cle=args.get('mot_cle', ''), page=page-1) }}" class="btn btn-secondary btn-sm" style="text-decoration: none;">&laquo; Précédent</a>
+                {% endif %}
+                
+                <form action="{{ url_for('articles') }}" method="GET" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                    <input type="hidden" name="source_id" value="{{ args.get('source_id', '') }}">
+                    <input type="hidden" name="jours" value="{{ args.get('jours', '30') }}">
+                    <input type="hidden" name="mot_cle" value="{{ args.get('mot_cle', '') }}">
+                    
+                    <span style="font-size: 0.9rem; color: var(--muted); font-weight: 500;">Page</span>
+                    <input type="number" name="page" value="{{ page }}" min="1" style="width: 70px; padding: 0.3rem; text-align: center; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); color: var(--text); font-size: 0.9rem;">
+                    <span style="font-size: 0.9rem; color: var(--muted); font-weight: 500;">sur {{ total_pages }}</span>
+                    
+                    <button type="submit" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Aller</button>
+                </form>
+                
+                {% if page < total_pages %}
+                <a href="{{ url_for('articles', source_id=args.get('source_id', ''), jours=args.get('jours', '30'), mot_cle=args.get('mot_cle', ''), page=page+1) }}" class="btn btn-secondary btn-sm" style="text-decoration: none;">Suivant &raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-results" style="padding: 3rem; text-align: center; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);">
+                <p>Aucun article ne correspond à vos critères de recherche.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.article-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important;
+}
+.article-card h3 a:hover {
+    color: var(--accent) !important;
+}
+</style>
+{% endblock %}

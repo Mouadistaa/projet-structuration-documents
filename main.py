@@ -96,6 +96,63 @@ def download_wordcloud():
         print(f"Erreur Download wordcloud: {e}")
         return "Erreur interne lors de la génération", 500
 
+@app.route('/articles')
+def articles():
+    source_id = request.args.get('source_id')
+    jours = request.args.get('jours', type=int, default=30)
+    mot_cle = request.args.get('mot_cle', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    filtres = {}
+    if source_id:
+        filtres['source_id'] = source_id
+        
+    if jours > 0:
+        date_limite = datetime.utcnow() - timedelta(days=jours)
+        filtres['date_publication'] = {"$gte": date_limite}
+        
+    if mot_cle:
+        # Recherche insensible à la casse dans les mots clés
+        filtres['mots_cles'] = {"$regex": mot_cle, "$options": "i"}
+        
+    total_articles = db.compter_articles(filtres)
+    total_pages = (total_articles + per_page - 1) // per_page
+    
+    if page < 1:
+        page = 1
+        
+    liste_articles = db.rechercher_articles(
+        filtres, 
+        tri=[("date_publication", -1)], 
+        skip=(page - 1) * per_page, 
+        limit=per_page
+    )
+    
+    populaires = db.obtenir_articles_populaires(limite=5)
+    sources = db.obtenir_sources()
+    
+    return render_template('articles.html', 
+                           articles=liste_articles, 
+                           sources=sources, 
+                           populaires=populaires, 
+                           args=request.args,
+                           page=page,
+                           total_pages=total_pages,
+                           total_articles=total_articles)
+
+@app.route('/goto')
+def goto():
+    url = request.args.get('url')
+    if not url:
+        return redirect(url_for('articles'))
+        
+    # Mettre à jour l'horodatage de consultation dans la base de données
+    db.mettre_a_jour_horodatage(url)
+    
+    # Rediriger vers la page d'origine de l'article dans un nouvel onglet (géré par le front)
+    return redirect(url)
+
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':

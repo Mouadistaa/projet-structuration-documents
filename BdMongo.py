@@ -57,25 +57,53 @@ class BdMongo:
             print(f"Erreur d'insertion: {e}")
             return False
 
-    def rechercher_articles(self, filtres):
+    def rechercher_articles(self, filtres, tri=None, skip=0, limit=0):
         """
         Recherche des articles en fonction de filtres.
-        filtres: dict (ex: {"source_id": "lemonde", "date_publication": {"$gte": date_debut, "$lte": date_fin}})
+        filtres: dict
         """
         if self.articles is None:
             return []
-        return list(self.articles.find(filtres))
+        cursor = self.articles.find(filtres)
+        if tri:
+            cursor = cursor.sort(tri)
+        if skip > 0:
+            cursor = cursor.skip(skip)
+        if limit > 0:
+            cursor = cursor.limit(limit)
+        return list(cursor)
+
+    def compter_articles(self, filtres):
+        """Compte le nombre total d'articles correspondant aux filtres."""
+        if self.articles is None:
+            return 0
+        return self.articles.count_documents(filtres)
 
     def mettre_a_jour_horodatage(self, url_originale):
         if self.articles is None:
             return
         try:
+            now = datetime.utcnow()
             self.articles.update_one(
                 {"url_originale": url_originale},
-                {"$set": {"horodatage_consultation": datetime.utcnow()}}
+                {
+                    "$set": {"horodatage_consultation": now},
+                    "$push": {"historique_consultations": now},
+                    "$inc": {"nombre_consultations": 1}
+                }
             )
         except Exception as e:
             print(f"Erreur de mise à jour: {e}")
+
+    def obtenir_articles_populaires(self, limite=5):
+        """
+        Récupère les articles avec le plus grand nombre de consultations.
+        """
+        if self.articles is None:
+            return []
+        return list(self.articles.find(
+            {"nombre_consultations": {"$exists": True, "$gt": 0}}
+        ).sort("nombre_consultations", pymongo.DESCENDING).limit(limite))
 
     # --- Gestion des sources ---
     def inserer_source(self, url_sitemap, source_id, frequence_heures=6):
