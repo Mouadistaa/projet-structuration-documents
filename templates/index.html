@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="glass-container text-center">
+    <h1>Analyse de l'Actualité</h1>
+    <p class="subtitle">Découvrez les termes les plus marquants des derniers jours.</p>
+    
+    <div class="controls-panel">
+        <form id="filter-form" class="filter-form">
+            <div class="form-group">
+                <label for="source_id">Source</label>
+                <select name="source_id" id="source_id">
+                    <option value="">Toutes les sources</option>
+                    {% for source in sources %}
+                    <option value="{{ source.source_id }}">{{ source.source_id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="jours">Période (jours)</label>
+                <input type="number" id="jours" name="jours" value="7" min="1" max="365">
+            </div>
+            
+            <div class="form-group">
+                <label for="max_mots">Nombre de Mots</label>
+                <input type="number" id="max_mots" name="max_mots" value="100" min="10" max="500">
+            </div>
+            
+            <button type="button" id="btn-generate" class="btn btn-primary">Générer le Nuage</button>
+        </form>
+    </div>
+
+    <div class="wordcloud-container">
+        <div id="loader" class="loader hidden"></div>
+        <div id="wordcloud-wrapper" class="wordcloud-wrapper">
+            <object id="wordcloud-obj" type="image/svg+xml" data="/api/wordcloud" class="wordcloud-svg"></object>
+        </div>
+    </div>
+    
+    <div class="actions-panel">
+        <a id="btn-download" href="/download/wordcloud.svg" class="btn btn-secondary">Télécharger (SVG)</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('btn-generate').addEventListener('click', function() {
+        const source_id = document.getElementById('source_id').value;
+        const jours = document.getElementById('jours').value;
+        const max_mots = document.getElementById('max_mots').value;
+        
+        const params = new URLSearchParams({ source_id, jours, max_mots });
+        
+        const svgObj = document.getElementById('wordcloud-obj');
+        const loader = document.getElementById('loader');
+        
+        loader.classList.remove('hidden');
+        svgObj.style.opacity = 0;
+        
+        // Timeout simple pour l'animation
+        setTimeout(() => {
+            svgObj.data = '/api/wordcloud?' + params.toString();
+            document.getElementById('btn-download').href = '/download/wordcloud.svg?' + params.toString();
+            
+            svgObj.onload = function() {
+                loader.classList.add('hidden');
+                svgObj.style.opacity = 1;
+            };
+        }, 500);
+    });
+</script>
+{% endblock %}

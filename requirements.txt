@@ -1,0 +1,9 @@
+Flask>=3.0.0
+pymongo>=4.6.0
+requests>=2.31.0
+beautifulsoup4>=4.12.2
+lxml
+nltk>=3.8.1
+wordcloud
+APScheduler>=3.10.4
+reportlab>=4.0.7

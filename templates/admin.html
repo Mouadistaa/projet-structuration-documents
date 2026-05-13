@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="glass-container">
+    <h2>Administration des Sources</h2>
+    
+    <div class="admin-section">
+        <h3>Ajouter une nouvelle source</h3>
+        <form action="/admin" method="POST" class="add-source-form">
+            <input type="hidden" name="action" value="ajouter">
+            <div class="form-group">
+                <label for="source_id">Identifiant Source (ex: lemonde)</label>
+                <input type="text" id="source_id" name="source_id" required>
+            </div>
+            <div class="form-group">
+                <label for="url_sitemap">URL Sitemap News</label>
+                <input type="url" id="url_sitemap" name="url_sitemap" required placeholder="https://www.lemonde.fr/sitemap_news.xml">
+            </div>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+    </div>
+
+    <div class="admin-section mt-4">
+        <h3>Sources existantes</h3>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Identifiant</th>
+                    <th>URL Sitemap</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for source in sources %}
+                <tr>
+                    <td>{{ source.source_id }}</td>
+                    <td><a href="{{ source.url_sitemap }}" target="_blank">{{ source.url_sitemap }}</a></td>
+                    <td>
+                        <form action="/admin" method="POST" style="display:inline;">
+                            <input type="hidden" name="action" value="supprimer">
+                            <input type="hidden" name="source_id" value="{{ source.source_id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center">Aucune source enregistrée.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="admin-section mt-4 text-center">
+        <h3>Actions Globales</h3>
+        <form action="/admin" method="POST">
+            <input type="hidden" name="action" value="forcer_collecte">
+            <button type="submit" class="btn btn-warning">Forcer la collecte maintenant</button>
+        </form>
+        <p class="help-text">La collecte automatique tourne en arrière-plan toutes les 6 heures.</p>
+    </div>
+</div>
+{% endblock %}

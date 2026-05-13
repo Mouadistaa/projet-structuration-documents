@@ -1,0 +1,123 @@
+from flask import Flask, render_template, request, redirect, url_for, Response, jsonify
+from BdMongo import BdMongo
+from analytics import obtenir_frequence_mots_agregation
+from pipeline import executer_pipeline_complet
+from apscheduler.schedulers.background import BackgroundScheduler
+import wordcloud
+from datetime import datetime, timedelta
+
+app = Flask(__name__)
+db = BdMongo()
+
+# Configuration du planificateur
+scheduler = BackgroundScheduler()
+# Par défaut, le pipeline est lancé toutes les 6 heures
+scheduler.add_job(func=executer_pipeline_complet, args=[db], trigger="interval", hours=6)
+scheduler.start()
+
+# S'assurer qu'il s'arrête à la fermeture
+import atexit
+atexit.register(lambda: scheduler.shutdown())
+
+@app.route('/')
+def index():
+    sources = db.obtenir_sources()
+    return render_template('index.html', sources=sources)
+
+@app.route('/api/wordcloud')
+def api_wordcloud():
+    try:
+        source_id = request.args.get('source_id')
+        jours = request.args.get('jours', type=int, default=7)
+        max_mots = request.args.get('max_mots', type=int, default=100)
+        
+        filtres = {}
+        if source_id:
+            filtres['source_id'] = source_id
+            
+        date_limite = datetime.utcnow() - timedelta(days=jours)
+        filtres['date_publication'] = {"$gte": date_limite}
+        
+        freq = obtenir_frequence_mots_agregation(db, filtres)
+        
+        if not freq:
+            if db.articles is None:
+                msg = "Erreur: MongoDB n'est pas connecté"
+            else:
+                msg = "Aucune donnée trouvée"
+            return f"<svg viewBox='0 0 800 400' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><text x='400' y='200' font-family='sans-serif' font-size='24' text-anchor='middle' fill='#94a3b8'>{msg}</text></svg>"
+            
+        # Limiter au max_mots
+        freq = dict(list(freq.items())[:max_mots])
+        
+        wc = wordcloud.WordCloud(width=800, height=400, background_color='white', mode='RGBA')
+        wc.generate_from_frequencies(freq)
+        svg_data = wc.to_svg()
+        
+        # Rendre le SVG responsive
+        svg_data = svg_data.replace('width="800" height="400"', 'viewBox="0 0 800 400" width="100%" height="100%"')
+        
+        return Response(svg_data, mimetype='image/svg+xml')
+    except Exception as e:
+        print(f"Erreur API wordcloud: {e}")
+        return f"<svg viewBox='0 0 800 400' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><text x='400' y='200' font-family='sans-serif' fill='red' text-anchor='middle'>Erreur: {str(e)[:50]}</text></svg>", 500
+
+@app.route('/download/wordcloud.svg')
+def download_wordcloud():
+    try:
+        source_id = request.args.get('source_id')
+        jours = request.args.get('jours', type=int, default=7)
+        max_mots = request.args.get('max_mots', type=int, default=100)
+        
+        filtres = {}
+        if source_id:
+            filtres['source_id'] = source_id
+            
+        date_limite = datetime.utcnow() - timedelta(days=jours)
+        filtres['date_publication'] = {"$gte": date_limite}
+        
+        freq = obtenir_frequence_mots_agregation(db, filtres)
+        
+        if not freq:
+            return "Aucune donnée trouvée", 404
+            
+        freq = dict(list(freq.items())[:max_mots])
+        
+        wc = wordcloud.WordCloud(width=800, height=400, background_color='white', mode='RGBA')
+        wc.generate_from_frequencies(freq)
+        svg_data = wc.to_svg()
+        
+        return Response(
+            svg_data,
+            mimetype="image/svg+xml",
+            headers={"Content-disposition": "attachment; filename=nuage_mots.svg"}
+        )
+    except Exception as e:
+        print(f"Erreur Download wordcloud: {e}")
+        return "Erreur interne lors de la génération", 500
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'ajouter':
+            url_sitemap = request.form.get('url_sitemap')
+            source_id = request.form.get('source_id')
+            db.inserer_source(url_sitemap, source_id)
+        elif action == 'supprimer':
+            source_id = request.form.get('source_id')
+            db.supprimer_source(source_id)
+        elif action == 'forcer_collecte':
+            executer_pipeline_complet(db)
+            
+        return redirect(url_for('admin'))
+        
+    sources = db.obtenir_sources()
+    return render_template('admin.html', sources=sources)
+
+if __name__ == '__main__':
+    # Initialisation optionnelle de base si vide
+    if not db.obtenir_sources():
+        db.inserer_source("https://www.lemonde.fr/sitemap_news.xml", "lemonde", 6)
+        
+    app.run(debug=True, use_reloader=False) # use_reloader=False pour éviter de lancer le planificateur deux fois
