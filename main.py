@@ -12,7 +12,7 @@ db = BdMongo()
 # Configuration du planificateur
 scheduler = BackgroundScheduler()
 # Par défaut, le pipeline est lancé toutes les 6 heures
-scheduler.add_job(func=executer_pipeline_complet, args=[db], trigger="interval", hours=6)
+job = scheduler.add_job(func=executer_pipeline_complet, args=[db], trigger="interval", hours=6, id="pipeline_job")
 scheduler.start()
 
 # S'assurer qu'il s'arrête à la fermeture
@@ -166,11 +166,26 @@ def admin():
             db.supprimer_source(source_id)
         elif action == 'forcer_collecte':
             executer_pipeline_complet(db)
+        elif action == 'modifier_planification':
+            jours = int(request.form.get('jours', 0))
+            heures = int(request.form.get('heures', 6))
+            if jours == 0 and heures == 0:
+                heures = 1
+            scheduler.reschedule_job('pipeline_job', trigger='interval', days=jours, hours=heures)
             
         return redirect(url_for('admin'))
         
     sources = db.obtenir_sources()
-    return render_template('admin.html', sources=sources)
+    
+    current_jours = 0
+    current_heures = 6
+    job = scheduler.get_job('pipeline_job')
+    if job and hasattr(job.trigger, 'interval'):
+        total_seconds = job.trigger.interval.total_seconds()
+        current_jours = int(total_seconds // 86400)
+        current_heures = int((total_seconds % 86400) // 3600)
+        
+    return render_template('admin.html', sources=sources, current_jours=current_jours, current_heures=current_heures)
 
 if __name__ == '__main__':
     # Initialisation optionnelle de base si vide

@@ -19,8 +19,8 @@ class BdMongo:
             self.client = MongoClient(self.uri, serverSelectionTimeoutMS=5000)
             self.client.admin.command('ping')
             self.db = self.client[self.db_name]
-            self.articles = self.db.articles
-            self.sources = self.db.sources
+            self.articles = self.db.G_FKES_articles
+            self.sources = self.db.G_FKES_sources
             print("Connexion MongoDB réussie.")
         except ConnectionFailure:
             print("Erreur : Impossible de se connecter à MongoDB.")
@@ -30,7 +30,7 @@ class BdMongo:
             # Index pour des requêtes rapides basées sur le temps et la source
             self.articles.create_index([("date_publication", pymongo.DESCENDING)])
             self.articles.create_index([("source_id", pymongo.ASCENDING)])
-            # Optionnel : Index composé si les requêtes combinent souvent les deux
+            # Index composé si les requêtes combinent souvent les deux
             self.articles.create_index([("source_id", pymongo.ASCENDING), ("date_publication", pymongo.DESCENDING)])
             # Index unique pour éviter les doublons
             self.articles.create_index([("url_originale", pymongo.ASCENDING)], unique=True)
@@ -125,7 +125,6 @@ class BdMongo:
         if self.sources is None or self.articles is None:
             return
         self.sources.delete_one({"source_id": source_id})
-        # Optionnel : supprimer tous les articles de cette source
         self.articles.delete_many({"source_id": source_id})
 
     def obtenir_sources(self):
