@@ -23,7 +23,7 @@ source .venv/bin/activate   # Linux/Mac
 # ou .venv\Scripts\activate  # Windows
 
 # Installer les dépendances
-pip install -r requirements.txt
+pip install -r src/requirements.txt
 ```
 
 ## Lancer MongoDB
@@ -41,12 +41,14 @@ mongod
 ## Lancer l'application
 
 ```bash
+cd src
 python main.py
 ```
 
 L'application sera accessible sur [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-Au premier lancement, la source « Le Monde » est ajoutée automatiquement et la collecte des articles démarre, il faut tout de même forcé la collecte pour la première fois.
+Au premier lancement, la source « Le Monde » est ajoutée automatiquement et la collecte des articles démarre.
+Au premier lancement, la source « Le Monde » est ajoutée automatiquement et la collecte des articles démarre, il faut tout de même forcer la collecte pour la première fois.
 
 ## Utilisation
 
@@ -71,20 +73,22 @@ Au premier lancement, la source « Le Monde » est ajoutée automatiquement et l
 ## Structure du projet
 
 ```
-├── main.py              # Point d'entrée Flask (routes)
-├── BdMongo.py           # Couche d'accès à MongoDB
-├── pipeline.py          # Collecte et parsing des sitemaps XML
-├── analytics.py         # Pipeline d'agrégation (fréquences)
-├── nlp_utils.py         # Nettoyage de texte / stop-words
-├── requirements.txt     # Dépendances Python
-├── static/
-│   └── style.css        # Feuille de style
-├── templates/
-│   ├── base.html        # Template de base (navbar, layout)
-│   ├── index.html       # Page d'accueil (nuage de mots)
-│   ├── articles.html    # Page de consultation
-│   └── admin.html       # Page d'administration
-└── rapport.pdf          # Rapport de projet
+├── README.md                      
+├── rapport.pdf
+└── src/
+    ├── main.py
+    ├── BdMongo.py
+    ├── analytics.py
+    ├── pipeline.py
+    ├── nlp_utils.py
+    ├── requirements.txt
+    ├── static/
+    │   └── style.css
+    └── templates/
+        ├── base.html
+        ├── index.html
+        ├── articles.html
+        └── admin.html
 ```
 
 ## Base de données
