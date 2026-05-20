@@ -86,5 +86,5 @@ def executer_pipeline_complet(db):
 if __name__ == "__main__":
     db = BdMongo()
     # Ajout d'une source de test si elle n'existe pas
-    db.inserer_source("https://www.lemonde.fr/sitemap_news.xml", "lemonde", 6)
+    db.inserer_source("https://www.lemonde.fr/sitemap_news.xml", "lemonde")
     executer_pipeline_complet(db)

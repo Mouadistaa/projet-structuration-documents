@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import wordcloud
 from datetime import datetime, timedelta
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 db = BdMongo()
 
 # Configuration du planificateur
@@ -190,6 +190,6 @@ def admin():
 if __name__ == '__main__':
     # Initialisation optionnelle de base si vide
     if not db.obtenir_sources():
-        db.inserer_source("https://www.lemonde.fr/sitemap_news.xml", "lemonde", 6)
+        db.inserer_source("https://www.lemonde.fr/sitemap_news.xml", "lemonde")
         
     app.run(debug=True, use_reloader=False) # use_reloader=False pour éviter de lancer le planificateur deux fois

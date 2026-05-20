@@ -106,14 +106,14 @@ class BdMongo:
         ).sort("nombre_consultations", pymongo.DESCENDING).limit(limite))
 
     # --- Gestion des sources ---
-    def inserer_source(self, url_sitemap, source_id, frequence_heures=6):
+    def inserer_source(self, url_sitemap, source_id):
         if self.sources is None:
             print("Erreur : Pas de connexion à la base de données.")
             return False
         try:
             self.sources.update_one(
                 {"source_id": source_id},
-                {"$set": {"url_sitemap": url_sitemap, "frequence_heures": frequence_heures}},
+                {"$set": {"url_sitemap": url_sitemap}},
                 upsert=True
             )
             return True
