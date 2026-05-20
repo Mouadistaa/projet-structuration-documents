@@ -38,13 +38,13 @@ class BdMongo:
 
     def inserer_article(self, article_data):
         """
-        Insérer un article s'il n'existe pas déjà.
+        Insérer d'un article avec vérifs
         """
         if self.articles is None:
             print("Erreur : Pas de connexion à la base de données.")
             return False
             
-        article_data['horodatage_consultation'] = datetime.utcnow()
+        article_data['horodatage_consultation'] = datetime.now()
         try:
             # Utilisation de update_one avec upsert pour éviter les doublons et gérer l'index unique
             result = self.articles.update_one(
@@ -60,7 +60,6 @@ class BdMongo:
     def rechercher_articles(self, filtres, tri=None, skip=0, limit=0):
         """
         Recherche des articles en fonction de filtres.
-        filtres: dict
         """
         if self.articles is None:
             return []
@@ -83,7 +82,7 @@ class BdMongo:
         if self.articles is None:
             return
         try:
-            now = datetime.utcnow()
+            now = datetime.now()
             self.articles.update_one(
                 {"url_originale": url_originale},
                 {

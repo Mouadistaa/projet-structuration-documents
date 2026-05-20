@@ -35,7 +35,7 @@ def api_wordcloud():
         if source_id:
             filtres['source_id'] = source_id
             
-        date_limite = datetime.utcnow() - timedelta(days=jours)
+        date_limite = datetime.now() - timedelta(days=jours)
         filtres['date_publication'] = {"$gte": date_limite}
         
         freq = obtenir_frequence_mots_agregation(db, filtres)
@@ -73,7 +73,7 @@ def download_wordcloud():
         if source_id:
             filtres['source_id'] = source_id
             
-        date_limite = datetime.utcnow() - timedelta(days=jours)
+        date_limite = datetime.now() - timedelta(days=jours)
         filtres['date_publication'] = {"$gte": date_limite}
         
         freq = obtenir_frequence_mots_agregation(db, filtres)
@@ -109,7 +109,7 @@ def articles():
         filtres['source_id'] = source_id
         
     if jours > 0:
-        date_limite = datetime.utcnow() - timedelta(days=jours)
+        date_limite = datetime.now() - timedelta(days=jours)
         filtres['date_publication'] = {"$gte": date_limite}
         
     if mot_cle:

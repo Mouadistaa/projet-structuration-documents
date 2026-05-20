@@ -15,7 +15,7 @@ def parse_date(date_str):
         return datetime.fromisoformat(date_str)
     except Exception as e:
         print(f"Erreur de parsing de date {date_str}: {e}")
-        return datetime.utcnow()
+        return datetime.now()
 
 def scraper_source(db, url_sitemap, source_id):
     print(f"[{datetime.now()}] Début du scraping pour {source_id} ({url_sitemap})")
