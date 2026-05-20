@@ -46,7 +46,7 @@ python main.py
 
 L'application sera accessible sur [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
-Au premier lancement, la source Le Monde est suggéré automatiquement pour l'ajout et la collecte des articles démarre.
+Au premier lancement, la source « Le Monde » est ajoutée automatiquement et la collecte des articles démarre, il faut tout de même forcé la collecte pour la première fois.
 
 ## Utilisation
 
